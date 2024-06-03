@@ -1,5 +1,4 @@
 function TravelClub_MSHBM_SetInput()
-
 % Input:
 %     - seed_mesh: fs_LR_900
 %     - targ_mesh: fs_LR_32k
@@ -7,7 +6,9 @@ function TravelClub_MSHBM_SetInput()
 %     - maxsess: 2
 %     - split_flag: 0
 %     - output_dir: E:\PhDproject\HCP\HCP_test4MSHBM\output
-   
+% Written by Xue-Ru Fan 2024-06-03 @ Beijing Normal University
+% Email:xueru@mail.bnu.edu.cn
+
 % Prompt the user for input parameters
     seed_mesh = input('Enter the resolution of the ROI mesh: ', 's');
     targ_mesh = input('Enter the surface mesh of input fMRI data: ', 's');

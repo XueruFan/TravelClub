@@ -3,6 +3,7 @@ function TravelClub_MSHBM_Prep(project_dir)
 % Input:
 %   - project_dir:
 % Written by Xue-Ru Fan 2024-06-01 @ Beijing Normal University
+% Email:xueru@mail.bnu.edu.cn
 
     % Define the data and output folders
     dataFolder = fullfile(project_dir, 'data');
