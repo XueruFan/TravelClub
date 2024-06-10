@@ -8,11 +8,23 @@
     mex -setup C
     project_dir = 'E:\PhDproject\HCP\HCP_test4MSHBM';
     code_dir = 'C:\TravelClub\Script';
+   
+    % addpath
+    addpath(genpath("C:\CBIG"));
+    addpath(genpath("C:\matlab-toolbox"))
+    addpath(genpath("C:\Program Files\MATLAB\R2022b\toolbox\"))
+    savepath
     %% Step 1
     TravelClub_MSHBM_Prep(project_dir)
     %% Step 2
     % see Kong2019_MSHBM README.md for input suggestions
-    TravelClub_MSHBM_SetInput
+%     TravelClub_MSHBM_SetInput
+    seed_mesh = 'fs_LR_900';
+    targ_mesh = 'fs_LR_32k';
+    nsub = '2';
+    maxsess = '2';
+    split_flag = '0';
+    project_dir = 'E:\PhDproject\HCP\HCP_test4MSHBM\output\generate_profiles_and_ini_params';
     %% Step 3
     % Generating profiles and initialization parameters
     % make sure you have added the CBIG folder into your path

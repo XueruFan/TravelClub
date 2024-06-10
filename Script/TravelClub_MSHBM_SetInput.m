@@ -2,7 +2,7 @@ function TravelClub_MSHBM_SetInput()
 % Input:
 %     - seed_mesh: fs_LR_900
 %     - targ_mesh: fs_LR_32k
-%     - nsub: 3
+%     - nsub: 2
 %     - maxsess: 2
 %     - split_flag: 0
 %     - output_dir: E:\PhDproject\HCP\HCP_test4MSHBM\output

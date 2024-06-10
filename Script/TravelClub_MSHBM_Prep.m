@@ -49,7 +49,7 @@ function TravelClub_MSHBM_Prep(project_dir)
                 runFolderPath = fullfile(sessionFolderPath, runFolderName);
                 
                 % Get nii files
-                niiFiles = dir(fullfile(runFolderPath, '*.nii'));
+                niiFiles = dir(fullfile(runFolderPath, '*.nii*'));
                 
                 % Add nii file paths to the cell array
                 for m = 1:length(niiFiles)
