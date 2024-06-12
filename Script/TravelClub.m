@@ -1,37 +1,49 @@
 %% Pipeline of Xue-Ru's anaysis
 % Written by Xue-Ru Fan 2024-06-03 @ Beijing Normal University
-% Email:xueru@mail.bnu.edu.cn
 %% Section 1 Mapping individual networks
     %% Step 0
     clear;clc
-    setenv('CBIG_CODE_DIR', 'C:\CBIG');
+    %——————————————————————————
+    project_dir = '/Users/xuerufan/Downloads/3RB2_test';
+    code_dir = '/Users/xuerufan/TravelClub/Script';
+    site = {'A', 'C'};
+    sub = [1:3];
+    nrun = 4;
+    %—————————————————————————— 以上需要自己定义，下面不用管
+    %     setenv('CBIG_CODE_DIR', 'C:\CBIG'); % Windows
+
+
     mex -setup C
-    project_dir = 'E:\PhDproject\HCP\HCP_test4MSHBM';
-    code_dir = 'C:\TravelClub\Script';
-   
+    nsite = length(site);
+    sub = arrayfun(@(x) {num2str(x)}, sub);
+    nsub = length(sub);
+    cd(code_dir)  
     % addpath
-    addpath(genpath("C:\CBIG"));
-    addpath(genpath("C:\matlab-toolbox"))
-    addpath(genpath("C:\Program Files\MATLAB\R2022b\toolbox\"))
-    savepath
+%     addpath(genpath("C:\CBIG")); % Windows
+%     addpath(genpath("C:\matlab-toolbox")) % Windows
+%     addpath(genpath("C:\Program Files\MATLAB\R2022b\toolbox\")) % Windows
+%     savepath
     %% Step 1
-    TravelClub_MSHBM_Prep(project_dir)
+    % 提前将数据放在一个文件夹-data子文件夹下，这个文件夹是project
+    
+    % 下面这个代码只适用于按照Kong2019代码使用示例中的数据整理格式，sub-sess-run
+%     TravelClub_MSHBM_Prep_test(project_dir)
+
+    % 下面这个代码只适用于3RB2的数据存放格式，site-sub-run
+    TravelClub_MSHBM_Prep(project_dir, nsite, nsub, nrun)
     %% Step 2
     % see Kong2019_MSHBM README.md for input suggestions
-%     TravelClub_MSHBM_SetInput
     seed_mesh = 'fs_LR_900';
     targ_mesh = 'fs_LR_32k';
-    nsub = '2';
-    maxsess = '2';
     split_flag = '0';
-    project_dir = 'E:\PhDproject\HCP\HCP_test4MSHBM\output\generate_profiles_and_ini_params';
+    project_dir = fullfile(project_dir, 'output/generate_profiles_and_ini_params');
     %% Step 3
     % Generating profiles and initialization parameters
     % make sure you have added the CBIG folder into your path
-    for sub = 1:str2num(nsub)
-     for sess = 1:str2num(maxsess)
+    for su = 1:nsub
+     for se = 1:nsite
         CBIG_MSHBM_generate_profiles(seed_mesh, targ_mesh, project_dir, ...
-            num2str(sub), num2str(sess), '0');
+            sub{su}, site{se}, split_flag);
      end
     end
     %% Step 4

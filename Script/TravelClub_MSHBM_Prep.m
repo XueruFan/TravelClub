@@ -1,9 +1,12 @@
-function TravelClub_MSHBM_Prep(project_dir)
-% This functional prepare all the txt files for the input of MSHBM
+function TravelClub_MSHBM_Prep(project_dir, num_sessions, num_subs, num_runs)
+% This function prepares all the txt files for the input of MSHBM
 % Input:
-%   - project_dir:
+%   - project_dir: The directory containing the data
+%   - num_sessions: The total number of sessions expected
+%   - num_subs: The total number of subjects expected
+%   - num_runs: The total number of runs expected
+% Note: This code is designed for our in-house 3RB2 data storage format, site-sub-run
 % Written by Xue-Ru Fan 2024-06-01 @ Beijing Normal University
-% Email:xueru@mail.bnu.edu.cn
 
     % Define the data and output folders
     dataFolder = fullfile(project_dir, 'data');
@@ -15,56 +18,73 @@ function TravelClub_MSHBM_Prep(project_dir)
         mkdir(outputFolder);
     end
     
-    % Get all subject folders
-    subfolders = dir(dataFolder);
-    subfolders = subfolders([subfolders.isdir]);
-    subfolders = subfolders(~ismember({subfolders.name}, {'.', '..'}));
+    % Get all session folders
+    sessionFolders = dir(dataFolder);
+    sessionFolders = sessionFolders([sessionFolders.isdir]);
+    sessionFolders = sessionFolders(~ismember({sessionFolders.name}, {'.', '..'}));
     
-    % Iterate through each subject folder
-    for i = 1:length(subfolders)
-        subfolderName = subfolders(i).name;
-        subfolderPath = fullfile(dataFolder, subfolderName);
+    % Check the number of sessions
+    if length(sessionFolders) ~= num_sessions
+        error('The number of session folders does not match the expected number of sessions.');
+    end
+
+    % Iterate through each session folder
+    for i = 1:num_sessions
+        sessionFolderName = sessionFolders(i).name;
+        sessionLetter = sessionFolderName(end); % Extract the last letter of the session folder name
+        sessionFolderPath = fullfile(dataFolder, sessionFolderName);
         
-        % Get all session folders in each subject folder
-        sessionFolders = dir(subfolderPath);
-        sessionFolders = sessionFolders([sessionFolders.isdir]);
-        sessionFolders = sessionFolders(~ismember({sessionFolders.name}, {'.', '..'}));
+        % Get all subject folders in each session folder
+        subfolders = dir(sessionFolderPath);
+        subfolders = subfolders([subfolders.isdir]);
+        subfolders = subfolders(~ismember({subfolders.name}, {'.', '..'}));
+        existingSubfolders = {subfolders.name};
         
-        % Iterate through each session folder
-        for j = 1:length(sessionFolders)
-            sessionFolderName = sessionFolders(j).name;
-            sessionFolderPath = fullfile(subfolderPath, sessionFolderName);
+        % Iterate through each subject
+        for j = 1:length(existingSubfolders)
+            subfolderName = existingSubfolders{j};
+            subfolderPath = fullfile(sessionFolderPath, subfolderName);
             
-            % Initialize a cell array to store all run file paths for the session
-            niiFilePaths = {};
+            % Initialize a cell array to store all run file paths for the subject
+            niiFilePaths = cell(1, num_runs);
             
-            % Get all run folders in each session folder
-            runFolders = dir(sessionFolderPath);
-            runFolders = runFolders([runFolders.isdir]);
-            runFolders = runFolders(~ismember({runFolders.name}, {'.', '..'}));
-            
-            % Iterate through each run folder to get nii file paths
-            for k = 1:length(runFolders)
-                runFolderName = runFolders(k).name;
-                runFolderPath = fullfile(sessionFolderPath, runFolderName);
-                
-                % Get nii files
-                niiFiles = dir(fullfile(runFolderPath, '*.nii*'));
-                
-                % Add nii file paths to the cell array
-                for m = 1:length(niiFiles)
-                    niiFilePath = fullfile(runFolderPath, niiFiles(m).name);
-                    niiFilePaths{end+1} = niiFilePath; %#ok<AGROW>
+            if exist(subfolderPath, 'dir')
+                % Iterate through each expected run
+                for r = 1:num_runs
+                    runFolderName = sprintf('run%d', r);
+                    runFolderPath = fullfile(subfolderPath, runFolderName, 'tedana');
+                    
+                    if exist(runFolderPath, 'dir')
+                        % Look for the specific file in the tedana subfolder
+                        niiFile = dir(fullfile(runFolderPath, 'desc-optcom_bold.nii.gz'));
+                        
+                        if isempty(niiFile)
+                            % If the file is not found, use 'NONE'
+                            niiFilePaths{r} = 'NONE';
+                        else
+                            % Add the file path to the cell array
+                            niiFilePaths{r} = fullfile(runFolderPath, niiFile(1).name);
+                        end
+                    else
+                        % If the tedana folder does not exist, use 'NONE'
+                        niiFilePaths{r} = 'NONE';
+                    end
                 end
+            else
+                % If the subfolder does not exist, use 'NONE' for all runs
+                niiFilePaths(:) = {'NONE'};
             end
             
-            % Create a txt file for the session and write all nii file paths
-            txtFileName = fullfile(outputFolder, [subfolderName, '_', sessionFolderName, '.txt']);
+            % Combine all run file paths for this session into a single string
+            niiFilePathsStr = strjoin(niiFilePaths, ' ');
+            
+            % Create a txt file for the subject and write all nii file paths for all runs
+            txtFileName = fullfile(outputFolder, sprintf('%s_sess%s.txt', subfolderName, sessionLetter));
             fileID = fopen(txtFileName, 'w');
-            fprintf(fileID, '%s ', niiFilePaths{:});
+            fprintf(fileID, '%s\n', niiFilePathsStr);
             fclose(fileID);
         end
     end
     
-    disp('All txt files have been created and saved in the output/data_list/fMRI_list folder.');
+    disp('DONE!');
 end
