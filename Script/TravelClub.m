@@ -91,9 +91,10 @@ split_flag = '0';
 out_dir = fullfile(project_dir, 'output/generate_profiles_and_ini_params');
 %% Step 3 Generating profiles and initialization parameters
 % make sure you have added the CBIG folder into your path
+% 由于多回波ICA融合时会进行降噪，这里没有再设置10%的阈值，>0=1, <0=0
 for su = 1:nsub
  for se = 1:nsite
-    CBIG_MSHBM_generate_profiles(seed_mesh, targ_mesh, out_dir, ...
+    TravelClub_CBIG_MSHBM_generate_profiles(seed_mesh, targ_mesh, out_dir, ...
         subnums{su}, site{se}, split_flag);
  end
 end
@@ -155,7 +156,26 @@ end
 % 这部分具体的真理要求参阅CBIG_MSHBM_estimate_group_priors.m里的描述
 TravelClub_MSHBM_ProfilePrep(project_dir);
 %% Step 7 把生成的group.mat文件和文件夹拷贝到MSHBM_Step2的文件夹里
-TravelClub_MSHBM_CopyGroup(project_dir)
+
+sourceFolder = fullfile(project_dir, 'output', 'generate_profiles_and_ini_params', 'group');
+destinationFolder = fullfile(project_dir, 'output', 'estimate_group_priors');
+
+% Ensure the source folder exists
+if ~exist(sourceFolder, 'dir')
+    error('Source folder does not exist: %s', sourceFolder);
+end
+
+% Create the destination folder if it does not exist
+if ~exist(destinationFolder, 'dir')
+    mkdir(destinationFolder);
+end
+
+% Define the full destination path including the group folder
+destinationGroupFolder = fullfile(destinationFolder, 'group');
+
+% Copy the source folder to the destination
+copyfile(sourceFolder, destinationGroupFolder);
+disp('DONE!');
 %% Step 8 估计模型的参数同时得出个体分区
 % set up input
 work_dir = fullfile(project_dir, 'output', 'estimate_group_priors');
@@ -172,21 +192,57 @@ Params = TravelClub_CBIG_MSHBM_estimate_group_priors(work_dir, mesh, num_sub, ..
 addpath(genpath(project_dir));
 savepath
 %% Step 9 提取出个体分区的结果label
-% indi_dir = fullfile(project_dir, 'output', 'generate_individual_parcellations');   
-% % Create the output folder if it doesn't exist
-% if ~exist(indi_dir, 'dir')
-%     mkdir(indi_dir);
-% end
-% addpath(genpath(indi_dir));
-% savepath
-% 跳过Kong2019_Step3为新个体估计个体网络的部分
-% 使用Xue2021的提取MSHBM结果的代码
 work_dir = fullfile(project_dir, 'output', 'estimate_group_priors');
-CBIG_IndCBM_extract_MSHBM_result(work_dir)
+% Load mat file
+final = load(fullfile(work_dir, 'priors', 'Params_Final.mat'));
+vertex_num = size(final.Params.s_lambda, 1) / 2;
+num_clusters = size(final.Params.s_lambda, 2);
+sub_num = size(final.Params.s_lambda, 3);
+
+output_dir = fullfile(work_dir, 'ind_parcellation');
+if(~exist(output_dir))
+    mkdir(output_dir);
+end
+
+% Extract individual parcellation
+for i = 1:nsub
+    if(isempty(final.Params.s_lambda))
+        error('s_lambda is empty. Please use save_all flag when estimating group prior.')
+    end
+    sub = final.Params.s_lambda(:, :, i);
+    [~, labels] = max(sub');
+    labels(sum(sub, 2) == 0) = 0; % Label medial wall as 0
+    lh_labels = labels(1:vertex_num)';
+    rh_labels = labels((vertex_num+1):end)';
+    output_file = fullfile(output_dir, ['Ind_parcellation_MSHBM_sub' subnums{i} '.mat']);
+    group_file = fullfile(project_dir, 'group', 'group.mat');
+    if(exist(group_file, 'file'))
+        group = load(group_file);
+        if(isfield(group, 'colors')) % Use group color table for individual parcellations
+            colors = group.colors;
+            save(output_file, 'lh_labels', 'rh_labels', 'colors', 'num_clusters');
+        else
+            save(output_file, 'lh_labels', 'rh_labels', 'num_clusters');
+        end
+    else
+        save(output_file, 'lh_labels', 'rh_labels', 'num_clusters');
+    end
+end
+
 %% Step 10 可视化
-project_dir = 'E:\PhDproject\HCP\HCP_test4MSHBM';
 vis_dir = fullfile(project_dir, 'visual'); % dscalar模板文件的地址
-data_dir = fullfile(project_dir, 'output\estimate_group_priors\ind_parcellation');
-num_sub = '3';
-num_clusters = '15';
-TravelClub_MSHBM_VisNet(data_dir, vis_dir, num_sub, num_clusters)
+if ~exist(vis_dir, 'dir')
+    mkdir(vis_dir);
+end
+data_dir = fullfile(project_dir, 'output', 'estimate_group_priors', 'ind_parcellation');
+for s = 1:nsub
+    % 导入个体分区文件
+    indi_data = load(fullfile(data_dir, ['Ind_parcellation_MSHBM_sub', subnums{s}, '.mat']));
+    % 导入皮层模版nii文件
+    temp = cifti_read(fullfile(code_dir, 'DU15NET_consensus_fsLR_32k.dlabel.nii'));
+    temp.cdata = [indi_data.lh_labels;indi_data.rh_labels];
+
+    fn = fullfile(vis_dir, ['sub', subnums{s}, '_Ind_Net_', num_clusters, '.dlabel.nii']); 
+    cifti_write(temp, fn);
+end
+disp("Finish!")
