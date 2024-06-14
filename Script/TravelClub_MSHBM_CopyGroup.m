@@ -3,7 +3,6 @@ function TravelClub_MSHBM_CopyGroup(project_dir)
 % Input:
 %   - project_dir:
 % Written by Xue-Ru Fan 2024-06-01 @ Beijing Normal University
-% Email:xueru@mail.bnu.edu.cn
 
     % Define the source and destination directories
     sourceFolder = fullfile(project_dir, 'output', 'generate_profiles_and_ini_params', 'group');
@@ -25,5 +24,5 @@ function TravelClub_MSHBM_CopyGroup(project_dir)
     % Copy the source folder to the destination
     copyfile(sourceFolder, destinationGroupFolder);
     
-    disp('Group folder and its contents have been copied successfully.');
+    disp('DONE!');
 end

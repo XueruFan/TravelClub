@@ -4,7 +4,6 @@ function TravelClub_MSHBM_ProfilePrep(project_dir)
 % Input:
 %   - project_dir:
 % Written by Xue-Ru Fan 2024-06-03 @ Beijing Normal University
-% Email:xueru@mail.bnu.edu.cn
 
     % Define the input and output folders
     profilesFolder = fullfile(project_dir, 'output', 'generate_profiles_and_ini_params', 'profiles');
@@ -62,5 +61,5 @@ function TravelClub_MSHBM_ProfilePrep(project_dir)
         fclose(fileID);
     end
     
-    disp('All txt files have been created and saved in the output/estimate_group_priors/profile_list/training_set folder.');
+    disp('DONE!');
 end

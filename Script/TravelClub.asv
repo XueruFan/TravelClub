@@ -165,7 +165,7 @@ num_sess = num2str(nsite);
 num_clusters = '15';
 % estimate group priors 这里要用雪如修改过的代码
 Params = TravelClub_CBIG_MSHBM_estimate_group_priors(work_dir, mesh, num_sub, ...
-    num_sess, site, num_clusters);
+    num_sessions, site, num_clusters);
 
 % mex -v -largeArrayDims mtimesx.c -lmwblas -lmwlapack 如果需要编译
 % Add the result directory and its subfolders to the MATLAB path

@@ -28,35 +28,39 @@ function TravelClub_MSHBM_Prep(project_dir, num_sessions, num_subs, num_runs)
         error('The number of session folders does not match the expected number of sessions.');
     end
 
+    % Define subject names
+    subs = {'sub-001', 'sub-002', 'sub-003', 'sub-004', 'sub-007'};
+    
     % Iterate through each session folder
     for i = 1:num_sessions
         sessionFolderName = sessionFolders(i).name;
         sessionLetter = sessionFolderName(end); % Extract the last letter of the session folder name
         sessionFolderPath = fullfile(dataFolder, sessionFolderName);
         
-        % Get all subject folders in each session folder
-        subfolders = dir(sessionFolderPath);
-        subfolders = subfolders([subfolders.isdir]);
-        subfolders = subfolders(~ismember({subfolders.name}, {'.', '..'}));
-        existingSubfolders = {subfolders.name};
-        
         % Iterate through each subject
-        for j = 1:length(existingSubfolders)
-            subfolderName = existingSubfolders{j};
+        for j = 1:num_subs
+            subfolderName = subs{j};
             subfolderPath = fullfile(sessionFolderPath, subfolderName);
             
             % Initialize a cell array to store all run file paths for the subject
             niiFilePaths = cell(1, num_runs);
             
             if exist(subfolderPath, 'dir')
-                % Iterate through each expected run
                 for r = 1:num_runs
-                    runFolderName = sprintf('run%d', r);
-                    runFolderPath = fullfile(subfolderPath, runFolderName, 'tedana');
+                    % Find folders that match the pattern *run%d
+                    pattern = sprintf('*run%d', r);
+                    folderInfo = dir(fullfile(subfolderPath, 'MNINonLinear', 'Results', pattern));
                     
-                    if exist(runFolderPath, 'dir')
-                        % Look for the specific file in the tedana subfolder
-                        niiFile = dir(fullfile(runFolderPath, 'desc-optcom_bold.nii.gz'));
+                    if isempty(folderInfo)
+                        % If no folder is found, use 'NONE'
+                        niiFilePaths{r} = 'NONE';
+                    else
+                        % Use the first matching folder
+                        runFolderName = folderInfo(1).name;
+                        runFolderPath = fullfile(subfolderPath, 'MNINonLinear', 'Results', runFolderName);
+                        
+                        % Look for the specific file in the subfolder
+                        niiFile = dir(fullfile(runFolderPath, '*.dtseries.nii'));
                         
                         if isempty(niiFile)
                             % If the file is not found, use 'NONE'
@@ -65,9 +69,6 @@ function TravelClub_MSHBM_Prep(project_dir, num_sessions, num_subs, num_runs)
                             % Add the file path to the cell array
                             niiFilePaths{r} = fullfile(runFolderPath, niiFile(1).name);
                         end
-                    else
-                        % If the tedana folder does not exist, use 'NONE'
-                        niiFilePaths{r} = 'NONE';
                     end
                 end
             else
