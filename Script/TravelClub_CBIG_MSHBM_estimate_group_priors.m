@@ -14,7 +14,6 @@ setting_params.mesh = mesh;
 
 %% read in data
 data = fetch_data(project_dir, setting_params.num_session, site, setting_params.num_sub, setting_params.mesh);
-fprintf('read data...DONE!\n');
 setting_params.dim = size(data.series,2) - 1;
 if(setting_params.dim < 1200) 
     setting_params.ini_concentration = 500; 
@@ -30,39 +29,13 @@ end
 % load group parcellation and parameters
 group = load(fullfile(project_dir, 'group', 'group.mat'));
 setting_params.g_mu = transpose(group.clustered.mtc);
-
-% mu: DxL. The group-level functional connectivity profiles of networks
 Params.mu = setting_params.g_mu;
-
-% epsil: 1xL. The inter-subject concentration parameter, which represents
-% inter-subject functional connectivity variability. A large epsil_l 
-% indicats low inter-subject functional connectivity variability for 
-% network l.
 Params.epsil = setting_params.ini_concentration*ones(1, setting_params.num_clusters);
-
-% s_psi: DxLxS. The functional connectivity profiles of L networks for S
-% subjects.
 Params.s_psi = repmat(setting_params.g_mu, 1, 1, setting_params.num_sub);
-
-% sigma: 1xL. The intra-subject concentration parameter, which represents
-% intra-subject functional connectivity variability. A large sigma_l
-% indicates low intra-subject functional connectivity variability for
-% network l.
 Params.sigma = setting_params.ini_concentration*ones(1, setting_params.num_clusters);
-
-% s_t_nu: DxLxTxS. The functional connectivity profiles of L networks for S
-% subjects and each subject has T sessions.
 Params.s_t_nu = repmat(setting_params.g_mu, 1, 1, setting_params.num_session, setting_params.num_sub);
-
-% kappa: 1xL. The inter-region concentration parameter, which represents
-% inter-region functional connectivity variability. A large kappa_l 
-% indicates low inter-region functional variability for network l. However,
-% please note in this script, we assume kappa to be the same across 
-% networks.
 Params.kappa = setting_params.ini_concentration*ones(1, setting_params.num_clusters);
 
-% s_lambda: NxLxS. The posterior probability of the individual-specific
-% parcellation of each subject. 
 log_vmf = permute(Params.s_t_nu, [1,2,4,3]);
 log_vmf = mtimesx(data.series, log_vmf);%NxLxSxT
 log_vmf = bsxfun(@times, permute(log_vmf,[2,1,3,4]), transpose(Params.kappa));%LxNxSxT
@@ -75,8 +48,6 @@ s_lambda = exp(s_lambda);
 Params.s_lambda = bsxfun(@times, s_lambda, 1./sum(s_lambda,2));
 Params.s_lambda(mask) = 0;
 
-%theta: NxL. The spatial prior denotes the probability of networks
-%occurring at each spatial location.
 Params.theta = mean(Params.s_lambda, 3);
 theta_num = sum(Params.s_lambda ~= 0, 3);
 Params.theta(Params.theta ~= 0) = Params.theta(Params.theta ~= 0)./theta_num(Params.theta ~= 0);
@@ -96,12 +67,10 @@ while(stop_inter == 0)
     while(stop_intra_em == 0)
         iter_intra_em = iter_intra_em + 1;
 
-        fprintf('Inter-region iteration %d ...\n', iter_intra_em);
         Params.kappa = setting_params.ini_concentration*ones(1, setting_params.num_clusters);
         Params.s_t_nu = repmat(setting_params.g_mu, 1, 1, setting_params.num_session, setting_params.num_sub);
         Params = vmf_clustering_subject_session(Params, setting_params, data);
 
-        fprintf('Intra-subject variability level...\n');
         Params = intra_subject_var(Params, setting_params);
 
         update_cost = bsxfun(@times, Params.s_psi, permute(Params.s_t_nu, [1,2,4,3]));
@@ -124,7 +93,6 @@ while(stop_inter == 0)
     end
 
     %% Inter subject variability
-    fprintf('Inter-subject variability level ...\n');
     Params = inter_subject_var(Params, setting_params);
 
     update_cost_inter = Params.cost_intra;    
@@ -151,8 +119,6 @@ while(stop_inter == 0)
     end
     save(fullfile(project_dir, 'priors', ['Params_iteration',num2str(Params.iter_inter),'.mat']), 'Params');
 end
-
-rmpath(fullfile(getenv('CBIG_CODE_DIR'), 'stable_projects', 'brain_parcellation', 'Kong2019_MSHBM', 'lib'));
 
 end
 
@@ -355,12 +321,6 @@ end
 
 
 function log_vmf = vmf_probability(X,nu,kap)
-
-% log of von Mises-Fisher distribution
-% X: input data
-% nu: mean direction
-% kap: concentration parameter. kap is a 1xL vector
-
 dim = size(X,2) - 1;
 log_vmf = bsxfun(@plus,Cdln(kap,dim),bsxfun(@times,kap,X*nu));
 end
@@ -371,10 +331,6 @@ end
 
 function out = Cdln(k,d,k0)
 k = double(k);
-
-% Computes the logarithm of the partition function of vonMises-Fisher as
-% a function of kappa
-
 sizek = size(k);
 k = k(:);
 
@@ -391,8 +347,6 @@ nGrids = 1000;
 
 maskof = find(k>k0);
 nkof = length(maskof);
-
-% The kappa values higher than the overflow
 
 if nkof > 0
 
@@ -447,7 +401,6 @@ for t = 1:num_session
         end
     end
     for i = 1:num_sub
-%         fprintf('Session %d...It is subj %d...\n',t,i);
         avg_file = profile_name{i,1};
         if(strcmp(avg_file,'NONE'))
             data.series(:,:,i,t) = zeros(size(data.series,1),size(data.series,2))*NaN;
