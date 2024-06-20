@@ -114,13 +114,11 @@ for j = 1:nsub
         '_roi' seed_mesh '.surf2surf_profile.mat']);
     fMRI_list = fullfile(out_dir,'data_list','fMRI_list',[subs{j} '_site-' site{i} '.txt']);
 
-    if exist(fMRI_list)
-        TravelClub_CBIG_ComputeCorrelationProfile(seed_mesh, targ_mesh, profile_file, 'NONE', '0.1', fMRI_list, ...
-            'NONE', 'NONE', split_flag);
-        disp([subs{j} ' site-' site{i} ' DONE!' ]);
-    else
-        disp([subs{j} ' site-' site{i} ' DOES NOT EXIT' ]);
-    end
+    test_CBIG_ComputeCorrelationProfile(seed_mesh, targ_mesh, profile_file, 'NONE', 0.1, fMRI_list, ...
+        'NONE', 'NONE', split_flag);
+
+    disp([subs{j} ' site-' site{i} ' DONE!' ]);
+ 
  end
 end
 
