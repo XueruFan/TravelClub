@@ -1,7 +1,161 @@
-function Params = TravelClub_CBIG_MSHBM_estimate_group_priors(project_dir,mesh,num_sub,num_sess,site,num_clusters,varargin)
+function Params = TravelClub_CBIG_MSHBM_estimate_group_priors(project_dir, mesh, num_sub, num_sess, site, num_clusters, varargin)
+
+% Params = CBIG_MSHBM_estimate_group_priors(project_dir,mesh,num_sub,num_sess,num_clusters,varargin)
+%
+% This script will estimate group priors for individual-level parcellation
+% generation. The estimated group priors include:
+% 1) inter-subject functional connectivity variability -- Params.epsil
+% 2) group-level connectivity profiles for each network -- Params.mu
+% 3) intra-subject functional connectivity variability -- Params.sigma
+% 4) spatial prior which denotes the probability of each network occurring
+%    at each location -- Params.theta
+%
+% To estimate the group priors, we assume the group-level
+% parcellation algorithm (Yeo et al., 2011) was already done to obtain
+% initialization parameters, which are saved in
+% project_dir/group/group.mat. 
+%
+% The functional connectivity profiles of num_sub training subjects with 
+% num_sess sessions are assumed already generated. The lists of functional 
+% connectivity profiles are assumed in 
+% project_dir/profile_list/training_set/lh_sess<?>.txt
+% project_dir/profile_list/training_set/rh_sess<?>.txt.
+%
+% Input:
+%   - project_dir:
+%
+%     The project directory.
+%     1) project_dir/group/group.mat 
+%        contains the results of group-level parcellation algorithm. This
+%        file is assumed to be pre-computed before run the current script.
+%        "group.mat" includes the von Mises-Fisher mean direction parameter
+%        "clustered.mtc". If the dimension of functional connectivity profile
+%        is NxD, then "clustered.mtc" should be num_clustersxD.
+%
+%     2) project_dir/profile_list/training_set/lh_sess<?>.txt
+%        project_dir/profile_list/training_set/rh_sess<?>.txt
+%        contain the functional connectivity profile lists of left
+%        hemisphere and right hemisphere for each session. The functional
+%        connectivity profiles are assumed to be pre-computed before run
+%        the current script. These profile lists are assumed to be
+%        pre-generated. For S training subjects and T sessions, there
+%        should be T lh_sess<?>.txt and rh_sess<?>.txt lists for data in
+%        'fsaverage4/fsaverage5/fsaverage6/fsaverage', or T sess<?>.txt
+%        lists for data in 'fs_LR_32k'.
+%        For example:
+%        project_dir/profile_list/training_set/lh_sess1.txt
+%        project_dir/profile_list/training_set/rh_sess1.txt
+%        project_dir/profile_list/training_set/lh_sess2.txt
+%        project_dir/profile_list/training_set/rh_sess2.txt
+%        or
+%        project_dir/profile_list/training_set/sess1.txt
+%        project_dir/profile_list/training_set/sess2.txt
+%        for 2 sessions. Each list should contain S rows, where each row 
+%        is the full file path of the functional connectivity profile for 
+%        each test subject.
+%        Note that the script allows for varied number of sessions across
+%        subjects. If the user wants to use varied number of
+%        sessions, please put the corresponding row of the missing session
+%        as 'NONE'. For example, subject 1 can has 2 sessions, and subject 2
+%        can have 3 sessions. For the 3rd session of subject 1, it can be
+%        denoted as NONE instead of the real path.
+%        project_dir/profile_list/training_set/lh_sess3.txt should be:
+%        NONE
+%        <path_to_profile>/sub2_sess3_profile.nii.gz
+%        <path_to_profile>/sub3_sess3_profile.nii.gz 
+%
+%   - mesh: (string)
+%     
+%     The data surface space. 'fsaverage5/fsaverage6/fsaverage' or 
+%     'fs_LR_32k'. 
+%
+%   - num_sub: (string)
+%
+%     The number of subjects the user want to use to estimate the group
+%     priors. For example, '40'.
+%
+%   - num_sess: (string)
+%
+%     The number of sessions the user want to use to estimate the group
+%     priors. For example, '4'.
+%
+%   - num_clusters: (string)
+%
+%     The number of networks of the parcellations. For example, '17'.
+%
+% Optional input:
+%
+%   - max_iter: (string)
+%     
+%     The maximum iteration of the algorithm. Default is '50'.
+%
+%   - conv_th: (string)
+%     
+%     The convergence threshould of the algorithm. Default is '1e-5'.
+%
+%   - save_all: (string)
+%     
+%     '1' means save all parameters. '0' means skip some parameters to save
+%     space. Default is '0';
+%
+% Output:
+%   
+%   - Params: (struct)
+%     
+%     D: data dimension
+%     N: #vertices
+%     L: #networks
+%     S: #subjects
+%     T: #sessions
+%
+%     Params.mu: DxL. 
+%     The group-level functional connectivity profiles of networks.
+%
+%     Params.epsil: 1xL. 
+%     The inter-subject concentration parameter, which represents
+%     inter-subject functional connectivity variability. A large epsil_l 
+%     indicats low inter-subject functional connectivity variability for 
+%     network l.
+%    
+%     Params.s_psi: DxLxS. 
+%     The functional connectivity profiles of L networks for S subjects.
+%
+%     Params.sigma: 1xL. 
+%     The intra-subject concentration parameter, which represents
+%     intra-subject functional connectivity variability. A large sigma_l
+%     indicates low intra-subject functional connectivity variability for
+%     network l.
+%
+%     Params.s_t_nu: DxLxTxS. 
+%     The functional connectivity profiles of L networks for S subjects 
+%     and each subject has T sessions.
+%
+%     Params.kappa: 1xL. 
+%     The inter-region concentration parameter, which represents
+%     inter-region functional connectivity variability. A large kappa_l 
+%     indicates low inter-region functional variability for network l. 
+%     However, please note in this script, we assume kappa to be the same 
+%     across networks.
+%
+%     Params.s_lambda: NxLxS. 
+%     The posterior probability of the individual-specific parcellation of 
+%     each subject. 
+%
+%     Params.theta: NxL. 
+%     The spatial prior denotes the probability of networks occurring at 
+%     each spatial location.
+%
+% Example:
+%   Params = CBIG_MSHBM_estimate_group_priors(project_dir,'fsaverage5','37','2','17')
+%
+% Written by Ru(by) Kong and CBIG under MIT license: https://github.com/ThomasYeoLab/CBIG/blob/master/LICENSE.md
+
+% addpath(fullfile(getenv('CBIG_CODE_DIR'), 'stable_projects', 'brain_parcellation', 'Kong2019_MSHBM', 'lib'));
+
 pnames = {'max_iter' 'conv_th' 'save_all'};
 dflts =  {'50' '1e-5' '0'};
 [max_iter, conv_th, save_all] = internal.stats.parseArgs(pnames, dflts, varargin{:});
+
 %% setting parameters
 setting_params.num_sub = str2double(num_sub); 
 setting_params.num_session = str2double(num_sess);
@@ -14,6 +168,7 @@ setting_params.mesh = mesh;
 
 %% read in data
 data = fetch_data(project_dir, setting_params.num_session, site, setting_params.num_sub, setting_params.mesh);
+fprintf('read data...DONE!\n');
 setting_params.dim = size(data.series,2) - 1;
 if(setting_params.dim < 1200) 
     setting_params.ini_concentration = 500; 
@@ -29,13 +184,39 @@ end
 % load group parcellation and parameters
 group = load(fullfile(project_dir, 'group', 'group.mat'));
 setting_params.g_mu = transpose(group.clustered.mtc);
+
+% mu: DxL. The group-level functional connectivity profiles of networks
 Params.mu = setting_params.g_mu;
+
+% epsil: 1xL. The inter-subject concentration parameter, which represents
+% inter-subject functional connectivity variability. A large epsil_l 
+% indicats low inter-subject functional connectivity variability for 
+% network l.
 Params.epsil = setting_params.ini_concentration*ones(1, setting_params.num_clusters);
+
+% s_psi: DxLxS. The functional connectivity profiles of L networks for S
+% subjects.
 Params.s_psi = repmat(setting_params.g_mu, 1, 1, setting_params.num_sub);
+
+% sigma: 1xL. The intra-subject concentration parameter, which represents
+% intra-subject functional connectivity variability. A large sigma_l
+% indicates low intra-subject functional connectivity variability for
+% network l.
 Params.sigma = setting_params.ini_concentration*ones(1, setting_params.num_clusters);
+
+% s_t_nu: DxLxTxS. The functional connectivity profiles of L networks for S
+% subjects and each subject has T sessions.
 Params.s_t_nu = repmat(setting_params.g_mu, 1, 1, setting_params.num_session, setting_params.num_sub);
+
+% kappa: 1xL. The inter-region concentration parameter, which represents
+% inter-region functional connectivity variability. A large kappa_l 
+% indicates low inter-region functional variability for network l. However,
+% please note in this script, we assume kappa to be the same across 
+% networks.
 Params.kappa = setting_params.ini_concentration*ones(1, setting_params.num_clusters);
 
+% s_lambda: NxLxS. The posterior probability of the individual-specific
+% parcellation of each subject. 
 log_vmf = permute(Params.s_t_nu, [1,2,4,3]);
 log_vmf = mtimesx(data.series, log_vmf);%NxLxSxT
 log_vmf = bsxfun(@times, permute(log_vmf,[2,1,3,4]), transpose(Params.kappa));%LxNxSxT
@@ -48,6 +229,8 @@ s_lambda = exp(s_lambda);
 Params.s_lambda = bsxfun(@times, s_lambda, 1./sum(s_lambda,2));
 Params.s_lambda(mask) = 0;
 
+%theta: NxL. The spatial prior denotes the probability of networks
+%occurring at each spatial location.
 Params.theta = mean(Params.s_lambda, 3);
 theta_num = sum(Params.s_lambda ~= 0, 3);
 Params.theta(Params.theta ~= 0) = Params.theta(Params.theta ~= 0)./theta_num(Params.theta ~= 0);
@@ -67,10 +250,12 @@ while(stop_inter == 0)
     while(stop_intra_em == 0)
         iter_intra_em = iter_intra_em + 1;
 
+        fprintf('Inter-region iteration %d ...\n', iter_intra_em);
         Params.kappa = setting_params.ini_concentration*ones(1, setting_params.num_clusters);
         Params.s_t_nu = repmat(setting_params.g_mu, 1, 1, setting_params.num_session, setting_params.num_sub);
         Params = vmf_clustering_subject_session(Params, setting_params, data);
 
+        fprintf('Intra-subject variability level...\n');
         Params = intra_subject_var(Params, setting_params);
 
         update_cost = bsxfun(@times, Params.s_psi, permute(Params.s_t_nu, [1,2,4,3]));
@@ -93,6 +278,7 @@ while(stop_inter == 0)
     end
 
     %% Inter subject variability
+    fprintf('Inter-subject variability level ...\n');
     Params = inter_subject_var(Params, setting_params);
 
     update_cost_inter = Params.cost_intra;    
@@ -119,6 +305,8 @@ while(stop_inter == 0)
     end
     save(fullfile(project_dir, 'priors', ['Params_iteration',num2str(Params.iter_inter),'.mat']), 'Params');
 end
+
+% rmpath(fullfile(getenv('CBIG_CODE_DIR'), 'stable_projects', 'brain_parcellation', 'Kong2019_MSHBM', 'lib'));
 
 end
 
@@ -321,6 +509,12 @@ end
 
 
 function log_vmf = vmf_probability(X,nu,kap)
+
+% log of von Mises-Fisher distribution
+% X: input data
+% nu: mean direction
+% kap: concentration parameter. kap is a 1xL vector
+
 dim = size(X,2) - 1;
 log_vmf = bsxfun(@plus,Cdln(kap,dim),bsxfun(@times,kap,X*nu));
 end
@@ -331,6 +525,10 @@ end
 
 function out = Cdln(k,d,k0)
 k = double(k);
+
+% Computes the logarithm of the partition function of vonMises-Fisher as
+% a function of kappa
+
 sizek = size(k);
 k = k(:);
 
@@ -347,6 +545,8 @@ nGrids = 1000;
 
 maskof = find(k>k0);
 nkof = length(maskof);
+
+% The kappa values higher than the overflow
 
 if nkof > 0
 
@@ -386,34 +586,79 @@ else
 end
 end
 
-
-function data = fetch_data(project_dir,num_session,site,num_sub,mesh)    
+function data = fetch_data(project_dir, num_session,site,num_sub,mesh)    
 
 % read in input functional connectivity profiles
-load(fullfile(getenv('CBIG_CODE_DIR'), 'stable_projects', 'brain_parcellation', 'Kong2019_MSHBM', 'lib', ...
-    'fs_LR_32k_medial_mask.mat'));
-for t = 1:num_session
-    data_profile = fullfile(project_dir,'profile_list','training_set',['sess' site{t} '.txt']);
-    profile_name = table2cell(readtable(data_profile,'Delimiter',' ','ReadVariableNames',false));
-    if(t==1)
-        if(strcmp(profile_name{1,1},'NONE'))
-            error('The first session of the first subject can not be empty');
+if(~isempty(strfind(mesh,'fs_LR_32k')))
+    load(fullfile(getenv('CBIG_CODE_DIR'), 'stable_projects', 'brain_parcellation', 'Kong2019_MSHBM', 'lib', ...
+        'fs_LR_32k_medial_mask.mat'));
+    for t = 1:num_session
+        data_profile = fullfile(project_dir,'profile_list','training_set',['site-' site{t} '.txt']);
+        profile_name = table2cell(readtable(data_profile,'Delimiter',' ','ReadVariableNames',false));
+        if(t==1)
+            if(strcmp(profile_name{1,1},'NONE'))
+                error('The first session of the first subject can not be empty');
+            end
+        end
+        for i = 1:num_sub
+%             fprintf('Session %d...It is subj %d...\n',t,i);
+            avg_file = profile_name{i,1};
+            if(strcmp(avg_file,'NONE'))
+                data.series(:,:,i,t) = zeros(size(data.series,1),size(data.series,2))*NaN;
+            else
+
+                [~, series, ~] = CBIG_MSHBM_read_fmri(avg_file);       
+                series(~medial_mask, :) = 0;
+
+                series = bsxfun(@minus,series,mean(series, 2));
+                series(all(series,2)~=0,:) = bsxfun(@rdivide,series(all(series,2)~=0,:), ...
+                                             sqrt(sum(series(all(series,2)~=0,:).^2,2)));
+                data.series(:,:,i,t) = series;
+            end
         end
     end
-    for i = 1:num_sub
-        avg_file = profile_name{i,1};
-        if(strcmp(avg_file,'NONE'))
-            data.series(:,:,i,t) = zeros(size(data.series,1),size(data.series,2))*NaN;
-        else
 
-            [~, series, ~] = CBIG_MSHBM_read_fmri(avg_file);       
-            series(~medial_mask, :) = 0;
-
-            series = bsxfun(@minus,series,mean(series, 2));
-            series(all(series,2)~=0,:) = bsxfun(@rdivide,series(all(series,2)~=0,:), ...
-                                         sqrt(sum(series(all(series,2)~=0,:).^2,2)));
-            data.series(:,:,i,t) = series;
-        end
-    end
-end 
+% elseif(~isempty(strfind(mesh,'fsaverage')))
+%     lh_avg_mesh = CBIG_ReadNCAvgMesh('lh', mesh, 'inflated','cortex');
+%     rh_avg_mesh = CBIG_ReadNCAvgMesh('rh', mesh, 'inflated', 'cortex'); 
+%     for t = 1:num_session
+%         lh_data_profile = fullfile(project_dir,'profile_list','training_set',['lh_sess' num2str(t) '.txt']);
+%         rh_data_profile = fullfile(project_dir,'profile_list','training_set',['rh_sess' num2str(t) '.txt']);
+%         lh_profile_name = table2cell(readtable(lh_data_profile,'Delimiter',' ','ReadVariableNames',false));
+%         rh_profile_name = table2cell(readtable(rh_data_profile,'Delimiter',' ','ReadVariableNames',false));
+%         if(t==1)
+%             if(strcmp(lh_profile_name{1,1},'NONE'))
+%                 error('The first session of the first subject can not be empty');
+%             end
+%         end
+%         
+%         for i = 1:num_sub
+%             fprintf('Session %d...It is subj %d...\n',t,i);
+%             lh_avg_file = lh_profile_name{i,1};
+%             rh_avg_file = rh_profile_name{i,1};
+%             
+%             if(strcmp(lh_avg_file,'NONE')&&strcmp(rh_avg_file,'NONE'))
+%                 data.series(:,:,i,t) = zeros(size(data.series,1),size(data.series,2))*NaN;
+%             elseif(~strcmp(lh_avg_file,'NONE')&&~strcmp(rh_avg_file,'NONE'))
+%                 
+%                 [~, lh_series, ~] = CBIG_MSHBM_read_fmri(lh_avg_file);
+%                 [~, rh_series, ~] = CBIG_MSHBM_read_fmri(rh_avg_file);
+% 
+%                 lh_series(lh_avg_mesh.MARS_label == 1,:) = 0;
+%                 rh_series(rh_avg_mesh.MARS_label == 1,:) = 0;
+% 
+%                 series = [lh_series;rh_series];
+% 
+%                 series = bsxfun(@minus,series,mean(series, 2));
+%                 series(all(series,2)~=0,:) = bsxfun(@rdivide,series(all(series,2)~=0,:), ...
+%                                              sqrt(sum(series(all(series,2)~=0,:).^2,2)));
+%                 data.series(:,:,i,t) = series;
+%             else
+%                 error('One of the left and right hemisphere profiles is NONE');
+%             end
+%         end
+%     end
+%     
+% end 
+    
 end
