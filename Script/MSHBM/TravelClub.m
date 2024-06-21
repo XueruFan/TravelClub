@@ -13,7 +13,7 @@ code_dir = '/Users/xuerufan/TravelClub/Script/MSHBM';
 temp_dir = '/Users/xuerufan/TravelClub/Script/Templet';
 
 site = {'A', 'C'};
-subid = [2 15]; % 注意只有一个site扫描的人去掉
+subid = [100206 100610 101006 101309]; % 注意只有一个site扫描的人去掉
 seed_mesh = 'fs_LR_900';
 targ_mesh = 'fs_LR_32k';
 num_clusters = 15;
@@ -25,8 +25,8 @@ niter = 2; % Step4 正式设置为1000
 mex -setup C
 mex -setup C++
 nsite = length(site);
-subs = arrayfun(@(x) {sprintf('sub-%03d', x)}, subid);
-% subnums = arrayfun(@(x) {sprintf('%03d', x)}, subid);
+% subs = arrayfun(@(x) {sprintf('sub-%03d', x)}, subid);
+subs = arrayfun(@(x) {sprintf('%d', x)}, subid);
 nsub = length(subid);
 cd(code_dir)
 
@@ -62,7 +62,8 @@ for i = 1:nsite
         if exist(subfolderPath, 'dir')
             niiFilePaths = {};
 
-            runFolders = dir(fullfile(subfolderPath, 'MNINonLinear', 'Results', '*PA_run*'));
+%             runFolders = dir(fullfile(subfolderPath, 'MNINonLinear', 'Results', '*PA_run*'));
+            runFolders = dir(fullfile(subfolderPath, 'MNINonLinear', 'Results', 'rfMRI*'));
 
             for k = 1:length(runFolders)
                 runFolderName = runFolders(k).name;
@@ -288,6 +289,7 @@ for j = 1:nsub
 
     temp = cifti_read(fullfile(temp_dir, 'DU15NET_consensus_fsLR_32k.dlabel.nii'));
     temp.cdata = [lh_labels; rh_labels];
+    temp.cdata = [lh_labels_fs6; rh_labels_fs6];
 
     fn = fullfile(vis_dir, [subs{j}, '_', num2str(num_clusters), 'Net.dlabel.nii']); 
     cifti_write(temp, fn);

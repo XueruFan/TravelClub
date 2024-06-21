@@ -589,7 +589,7 @@ end
 function data = fetch_data(project_dir, num_session,site,num_sub,mesh)    
 
 % read in input functional connectivity profiles
-if(~isempty(strfind(mesh,'fs_LR_32k')))
+% if(~isempty(strfind(mesh,'fs_LR_32k')))
     load(fullfile(getenv('CBIG_CODE_DIR'), 'stable_projects', 'brain_parcellation', 'Kong2019_MSHBM', 'lib', ...
         'fs_LR_32k_medial_mask.mat'));
     for t = 1:num_session
