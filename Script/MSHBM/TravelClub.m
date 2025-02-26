@@ -5,16 +5,27 @@
 
 clear;clc
 
-%—————————————————————————— 下面这里需要手动定义
-setenv('CBIG_CODE_DIR', '/Users/xuerufan/matlab-toolbox/CBIG');
-setenv('FREESURFER_HOME', '/Applications/freesurfer');
-project_dir = '/Users/xuerufan/Downloads/3RB2_test';
-code_dir = '/Users/xuerufan/TravelClub/Script/MSHBM'; 
-temp_dir = '/Users/xuerufan/TravelClub/Script/Templet';
+% setenv('CBIG_CODE_DIR', '/Users/xuerufan/matlab-toolbox/CBIG');
+% setenv('FREESURFER_HOME', '/Applications/freesurfer');
+% project_dir = '/Users/xuerufan/Downloads/3RB2_test';
+% code_dir = '/Users/xuerufan/TravelClub/Script/MSHBM'; 
+% temp_dir = '/Users/xuerufan/TravelClub/Script/Templet';
+% addpath('/Applications/freesurfer');
+% addpath('/Applications/workbench/bin_macosx64/');
 
-site = {'A', 'C'};
+%——————————
+setenv('CBIG_CODE_DIR', '/media/ubuntu/Zuolab_Xueru/Script/CBIG');
+setenv('FREESURFER_HOME', '/home/ubuntu/Softwares/FREESURFER/freesurfer');
+project_dir = '/media/ubuntu/Zuolab_Xueru/3RB2_test';
+code_dir = '/media/ubuntu/Zuolab_Xueru/Script/MSHBM'; 
+temp_dir = '/media/ubuntu/Zuolab_Xueru/Script/Templet';
+addpath('/home/ubuntu/Softwares/FREESURFER/freesurfer');
+addpath('/home/ubuntu/Softwares/workbench/bin_linux64/');
+
+
+site = {'3RB2_A', '3RB2_B', '3RB2_C', '3RB2_D', '3RB2_E', '3RB2_G'};
 % subid = [1 7 15]; % 注意只有一个site扫描的人去掉
-subid = [100206 100610 101006 101309]; % test
+subid = [2 100 200]; % test
 seed_mesh = 'fs_LR_900';
 targ_mesh = 'fs_LR_32k';
 num_clusters = 15;
@@ -22,19 +33,14 @@ threshold = 0.1;
 niter = 2; % Step4 正式设置为1000
 
 
-%—————————————————————————— 下面不用管
-
-addpath('/Applications/freesurfer');
-addpath('/Applications/workbench/bin_macosx64/');
-
-
 mex -setup C
 mex -setup C++
 nsite = length(site);
-% subs = arrayfun(@(x) {sprintf('sub-%03d', x)}, subid);
-subs = arrayfun(@(x) {sprintf('%d', x)}, subid); % test
+subs = arrayfun(@(x) {sprintf('sub-%03d', x)}, subid);
+% subs = arrayfun(@(x) {sprintf('%d', x)}, subid); % test
 nsub = length(subid);
 cd(code_dir)
+
 
 disp('Step 0 DONE!');
 
