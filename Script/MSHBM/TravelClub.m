@@ -34,7 +34,7 @@ subid = [2 4 10]; % 注意只有一个site扫描的人去掉
 seed_mesh = 'fs_LR_900';
 targ_mesh = 'fs_LR_32k';
 num_clusters = 15;
-threshold = 0.1;
+threshold = 0.1; % 参考du的方案（也就是默认方案）
 niter = 10; % 需要改成1000
 
 
