@@ -1,12 +1,13 @@
-%% Pipeline of Xue-Ru's anaysis: Mapping individual networks
+%% Pipeline of individual networks mapping
+% 3R-BRAIN Project
 % Written by Xue-Ru Fan 2024-06-03 @ Beijing Normal University
 
 %% Step 0 Set up parameters
 
 clear;clc
 
-% delete(gcp('nocreate'));
-% parpool('Processes', 56, 'IdleTimeout', Inf);
+delete(gcp('nocreate'));
+parpool('Processes', 56, 'IdleTimeout', Inf);
 
 % setenv('CBIG_CODE_DIR', '/Users/xuerufan/matlab-toolbox/CBIG');
 % setenv('FREESURFER_HOME', '/Applications/freesurfer');
@@ -17,15 +18,15 @@ clear;clc
 % addpath('/Applications/workbench/bin_macosx64/');
 
 %——————————
-setenv('CBIG_CODE_DIR', '/media/ubuntu/e308ca70-1449-49f0-9a87-b2b2bc4b13b7/FanXueru/toolbox-matlab/CBIG');
+setenv('CBIG_CODE_DIR', '/home/ubuntu/homes/FanXueru/toolbox-matlab/CBIG');
 setenv('FREESURFER_HOME', '/home/ubuntu/Softwares/FREESURFER/freesurfer');
 project_dir = '/media/ubuntu/Zuolab_Xueru/TravelClub';
-code_dir = '/media/ubuntu/Zuolab_Xueru/TravelClub/script/MSHBM'; 
-temp_dir = '/media/ubuntu/Zuolab_Xueru/TravelClub/script/Templet';
+code_dir = '/media/ubuntu/Zuolab_Xueru/TravelClub/code/MSHBM'; 
+temp_dir = '/media/ubuntu/Zuolab_Xueru/TravelClub/templet';
 
 addpath('/home/ubuntu/Softwares/FREESURFER/freesurfer');
 addpath('/home/ubuntu/Softwares/workbench/bin_linux64/');
-addpath(genpath('/media/ubuntu/e308ca70-1449-49f0-9a87-b2b2bc4b13b7/FanXueru/toolbox-matlab/CBIG'));
+addpath(genpath('/home/ubuntu/homes/FanXueru/toolbox-matlab/CBIG'));
 addpath(genpath('/media/ubuntu/Zuolab_Xueru/TravelClub'));
 
 site = {'A', 'B', 'C', 'D', 'E', 'G'};
@@ -33,8 +34,8 @@ subid = [2 4 10]; % 注意只有一个site扫描的人去掉
 % subid = [1:16 18:24 26:28 30 32 34:39 42];
 seed_mesh = 'fs_LR_900';
 targ_mesh = 'fs_LR_32k';
-num_clusters = 15;
-threshold = 0.1; % 参考du的方案（也就是默认方案）
+num_clusters = [15 7:14 16];
+threshold = [10 1 0.1 20 2 0.2 50 5 0.5]/100; %0.1; %参考du的方案（也就是默认方案)
 niter = 10; % 需要改成1000
 
 
@@ -44,6 +45,8 @@ nsite = length(site);
 subs = arrayfun(@(x) {sprintf('sub-%03d', x)}, subid);
 % subs = arrayfun(@(x) {sprintf('%d', x)}, subid); % test
 nsub = length(subid);
+xclu = length(num_clusters);
+xthe = length(threshold);
 cd(code_dir)
 
 
@@ -178,7 +181,7 @@ disp('Step 1 DONE!');
 % modified from CBIG_ComputeCorrelationProfile.m
 % 由于多回波ICA融合时会进行降噪，在step0里需要小心设置阈值
 
-out_dir = fullfile(project_dir, 'output/generate_profiles_and_ini_params');
+out_dir = fullfile(project_dir, 'output', 'generate_profiles_and_ini_params');
 
 flatIndices = [];
 for j = 1:nsub
@@ -188,28 +191,34 @@ for j = 1:nsub
 end
 
 parfor idx = 1:size(flatIndices, 1)
-    try
-        j = flatIndices(idx, 1); % 被试索引
-        i = flatIndices(idx, 2); % 站点索引
 
-        out_profile_dir = fullfile(out_dir,'profiles', subs{j}, ['site-' site{i}]);
+    j = flatIndices(idx, 1); % 被试索引
+    i = flatIndices(idx, 2); % 站点索引
 
-        if ~exist(out_profile_dir, 'dir')
-            mkdir(out_profile_dir);
+    fMRI_list = fullfile(out_dir,'data_list','fMRI_list',[subs{j} '_site-' site{i} '.txt']);
+    
+    if exist(fMRI_list, 'file')
+
+        for t = 1:xthe 
+            try
+                out_profile_dir = fullfile(out_dir,'profiles', subs{j}, ['site-' site{i}], ['t-' num2str(threshold(t))]);
+        
+                if ~exist(out_profile_dir, 'dir')
+                    mkdir(out_profile_dir);
+                end
+        
+                profile_file = fullfile(out_profile_dir, [subs{j} '_site-' site{i} '_' targ_mesh '_roi' seed_mesh '.surf2surf_profile.mat']);
+                
+                TravelClub_CBIG_ComputeCorrelationProfile(seed_mesh, targ_mesh, profile_file, 'NONE', num2str(threshold(t)), ...
+                   fMRI_list, 'NONE', 'NONE', '0');
+                %disp(['Threshold ', num2str(threshold(t)), ' ', subs{j} ' site-' site{i} ' DONE!' ]);
+                
+            catch ME
+                fprintf('Error processing subject %s in site %s: %s\n', subs{j}, site{i}, ME.message);
+            end
         end
-
-        profile_file = fullfile(out_profile_dir, [subs{j} '_site-' site{i} '_' targ_mesh '_roi' seed_mesh '.surf2surf_profile.mat']);
-        fMRI_list = fullfile(out_dir,'data_list','fMRI_list',[subs{j} '_site-' site{i} '.txt']);
-
-        if exist(fMRI_list, 'file')
-            TravelClub_CBIG_ComputeCorrelationProfile(seed_mesh, targ_mesh, profile_file, 'NONE', num2str(threshold), ...
-               fMRI_list, 'NONE', 'NONE', '0');
-            disp([subs{j} ' site-' site{i} ' DONE!' ]);
-        else
-            disp([subs{j} ' site-' site{i} ' DOES NOT EXIT' ]);
-        end
-    catch ME
-        fprintf('Error processing subject %s in site %s: %s\n', subs{j}, site{i}, ME.message);
+    else
+        disp([subs{j} ' site-' site{i} ' DOES NOT EXIT' ]);
     end
 end
 
