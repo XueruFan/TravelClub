@@ -6,37 +6,42 @@
 
 clear;clc
 
-delete(gcp('nocreate'));
-parpool('Processes', 56, 'IdleTimeout', Inf);
+% 启用并行处理
+% delete(gcp('nocreate'));
+% parpool('Processes', 56, 'IdleTimeout', Inf);
 
-% setenv('CBIG_CODE_DIR', '/Users/xuerufan/matlab-toolbox/CBIG');
-% setenv('FREESURFER_HOME', '/Applications/freesurfer');
-% project_dir = '/Users/xuerufan/Downloads/3RB2_test';
-% code_dir = '/Users/xuerufan/TravelClub/Script/MSHBM'; 
-% temp_dir = '/Users/xuerufan/TravelClub/Script/Templet';
-% addpath('/Applications/freesurfer');
-% addpath('/Applications/workbench/bin_macosx64/');
+%—————————— MAC
+setenv('CBIG_CODE_DIR', '/Users/xuerufan/matlab-toolbox/CBIG');
+setenv('FREESURFER_HOME', '/Applications/freesurfer');
+project_dir = '/Volumes/Zuolab_Xueru/TravelClub';
+code_dir = '/Volumes/Zuolab_Xueru/TravelClub/code/MSHBM'; 
+temp_dir = '/Volumes/Zuolab_Xueru/TravelClub/templet';
 
-%——————————
-setenv('CBIG_CODE_DIR', '/home/ubuntu/homes/FanXueru/toolbox-matlab/CBIG');
-setenv('FREESURFER_HOME', '/home/ubuntu/Softwares/FREESURFER/freesurfer');
-project_dir = '/media/ubuntu/Zuolab_Xueru/TravelClub';
-code_dir = '/media/ubuntu/Zuolab_Xueru/TravelClub/code/MSHBM'; 
-temp_dir = '/media/ubuntu/Zuolab_Xueru/TravelClub/templet';
-
-addpath('/home/ubuntu/Softwares/FREESURFER/freesurfer');
-addpath('/home/ubuntu/Softwares/workbench/bin_linux64/');
+addpath('/Applications/freesurfer');
+addpath('/Applications/workbench/bin_macosx64/');
 addpath(genpath('/home/ubuntu/homes/FanXueru/toolbox-matlab/CBIG'));
 addpath(genpath('/media/ubuntu/Zuolab_Xueru/TravelClub'));
+
+%—————————— Linux
+% setenv('CBIG_CODE_DIR', '/home/ubuntu/homes/FanXueru/toolbox-matlab/CBIG');
+% setenv('FREESURFER_HOME', '/home/ubuntu/Softwares/FREESURFER/freesurfer');
+% project_dir = '/media/ubuntu/Zuolab_Xueru/TravelClub';
+% code_dir = '/media/ubuntu/Zuolab_Xueru/TravelClub/code/MSHBM'; 
+% temp_dir = '/media/ubuntu/Zuolab_Xueru/TravelClub/templet';
+% 
+% addpath('/home/ubuntu/Softwares/FREESURFER/freesurfer');
+% addpath('/home/ubuntu/Softwares/workbench/bin_linux64/');
+% addpath(genpath('/home/ubuntu/homes/FanXueru/toolbox-matlab/CBIG'));
+% addpath(genpath('/media/ubuntu/Zuolab_Xueru/TravelClub'));
 
 site = {'A', 'B', 'C', 'D', 'E', 'G'};
 subid = [2 4 10]; % 注意只有一个site扫描的人去掉
 % subid = [1:16 18:24 26:28 30 32 34:39 42];
 seed_mesh = 'fs_LR_900';
 targ_mesh = 'fs_LR_32k';
-num_clusters = [15 7:14 16];
-threshold = [10 1 0.1 20 2 0.2 50 5 0.5]/100; %0.1; %参考du的方案（也就是默认方案)
-niter = 10; % 需要改成1000
+networks = [15 10];%[7:14 16];
+threshold = [10 20]/100; %0.1; %参考du的方案（也就是默认方案)
+niter = 4; % 正式改成1000
 
 
 mex -setup C
@@ -45,7 +50,7 @@ nsite = length(site);
 subs = arrayfun(@(x) {sprintf('sub-%03d', x)}, subid);
 % subs = arrayfun(@(x) {sprintf('%d', x)}, subid); % test
 nsub = length(subid);
-xclu = length(num_clusters);
+xnet = length(networks);
 xthe = length(threshold);
 cd(code_dir)
 
@@ -70,6 +75,9 @@ siteFolders = siteFolders(~ismember({siteFolders.name}, {'.', '..'}));
 %     error('Number of site folders doesnt match the expected number of sites. Please check!');
 % end
 
+
+
+%---- 并行处理
 % 由于parfor里不能进行内层并行，这里创建一个扁平化的索引，然后对这个扁平化的循环使用 parfor
 flatIndices = [];
 for i = 1:nsite
@@ -78,8 +86,8 @@ for i = 1:nsite
     end
 end
 
-%---- 并行处理
 parfor idx = 1:size(flatIndices, 1)
+
     i = flatIndices(idx, 1); % 站点索引
     j = flatIndices(idx, 2); % 被试索引
 
@@ -125,55 +133,55 @@ parfor idx = 1:size(flatIndices, 1)
     end
 end
 
-% %---- 单机处理
-% for i = 1:nsite
-% %     i = 1
-%     siteFolderName = siteFolders(i).name;
-%     siteLetter = siteFolderName(end);
-%     siteFolderPath = fullfile(dataFolder, siteFolderName);
-%     
-%     for j = 1:nsub
-% %         j = 1
-%         subFolderName = subs{j};
-%         subfolderPath = fullfile(siteFolderPath, subFolderName);
-%         
-%         if exist(subfolderPath, 'dir')
-%             niiFilePaths = {};
-% 
-% %             runFolders = dir(fullfile(subfolderPath, 'MNINonLinear', 'Results', '*PA_run*'));
-%             runFolders = dir(fullfile(subfolderPath, '*PA_run*'));
-% 
-%             for k = 1:length(runFolders)
-% %                 k = 1
-%                 runFolderName = runFolders(k).name;
-% %                 runFolderPath = fullfile(subfolderPath, 'MNINonLinear', 'Results', ...
-% %                     runFolderName);
-%                 runFolderPath = fullfile(subfolderPath, runFolderName);
-%                 niiFile = dir(fullfile(runFolderPath, '*.dtseries.nii'));
-%                 
-%                 if isempty(niiFile)
-%                     error('This sub doesnt have this data. Please check!');
-%                 end
-% 
-%                 niiFilePaths{end+1} = fullfile(runFolderPath, niiFile(1).name);
-%             end
-%             
-%             if ~isempty(niiFilePaths)
-%                 txtFileName = fullfile(outputFolder, sprintf('%s_site-%s.txt', subFolderName, ...
-%                     siteLetter));
-%                 fileID = fopen(txtFileName, 'w');
-%                 for n = 1:length(niiFilePaths)
-%                     if n == length(niiFilePaths)
-%                         fprintf(fileID, '%s', niiFilePaths{n});
-%                     else
-%                         fprintf(fileID, '%s ', niiFilePaths{n});
-%                     end
-%                 end
-%                 fclose(fileID);
-%             end
-%         end
-%     end
-% end
+%---- 单机处理
+for i = 1:nsite
+%     i = 1
+    siteFolderName = siteFolders(i).name;
+    siteLetter = siteFolderName(end);
+    siteFolderPath = fullfile(dataFolder, siteFolderName);
+    
+    for j = 1:nsub
+%         j = 1
+        subFolderName = subs{j};
+        subfolderPath = fullfile(siteFolderPath, subFolderName);
+        
+        if exist(subfolderPath, 'dir')
+            niiFilePaths = {};
+
+%             runFolders = dir(fullfile(subfolderPath, 'MNINonLinear', 'Results', '*PA_run*'));
+            runFolders = dir(fullfile(subfolderPath, '*PA_run*'));
+
+            for k = 1:length(runFolders)
+%                 k = 1
+                runFolderName = runFolders(k).name;
+%                 runFolderPath = fullfile(subfolderPath, 'MNINonLinear', 'Results', ...
+%                     runFolderName);
+                runFolderPath = fullfile(subfolderPath, runFolderName);
+                niiFile = dir(fullfile(runFolderPath, '*.dtseries.nii'));
+                
+                if isempty(niiFile)
+                    error('This sub doesnt have this data. Please check!');
+                end
+
+                niiFilePaths{end+1} = fullfile(runFolderPath, niiFile(1).name);
+            end
+            
+            if ~isempty(niiFilePaths)
+                txtFileName = fullfile(outputFolder, sprintf('%s_site-%s.txt', subFolderName, ...
+                    siteLetter));
+                fileID = fopen(txtFileName, 'w');
+                for n = 1:length(niiFilePaths)
+                    if n == length(niiFilePaths)
+                        fprintf(fileID, '%s', niiFilePaths{n});
+                    else
+                        fprintf(fileID, '%s ', niiFilePaths{n});
+                    end
+                end
+                fclose(fileID);
+            end
+        end
+    end
+end
 
 disp('Step 1 DONE!');
 
@@ -207,8 +215,9 @@ parfor idx = 1:size(flatIndices, 1)
                     mkdir(out_profile_dir);
                 end
         
-                profile_file = fullfile(out_profile_dir, [subs{j} '_site-' site{i} '_' targ_mesh '_roi' seed_mesh '.surf2surf_profile.mat']);
-                
+%                 profile_file = fullfile(out_profile_dir, [subs{j} '_site-' site{i} '_' targ_mesh '_roi' seed_mesh '.surf2surf_profile.mat']);
+                profile_file = fullfile(out_profile_dir, [subs{j} '_site-' site{i} '_t-' num2str(threshold(t)) '.mat']);
+
                 TravelClub_CBIG_ComputeCorrelationProfile(seed_mesh, targ_mesh, profile_file, 'NONE', num2str(threshold(t)), ...
                    fMRI_list, 'NONE', 'NONE', '0');
                 %disp(['Threshold ', num2str(threshold(t)), ' ', subs{j} ' site-' site{i} ' DONE!' ]);
@@ -256,41 +265,56 @@ disp('Step 2 DONE!');
 
 out_dir = fullfile(project_dir, 'output/generate_profiles_and_ini_params');
 
-if ~exist(fullfile(out_dir,'profiles','avg_profile'))
-    mkdir(fullfile(out_dir,'profiles','avg_profile'));
+avg_profile_dir = fullfile(out_dir, 'profiles', 'avg_profile');
+
+if ~exist(avg_profile_dir)
+    mkdir(avg_profile_dir);
 end
 
-num_data = 0;
-for j = 1:nsub
-    for i = 1:nsite
+for t = 1:xthe
 
-        out_profile_dir = fullfile(out_dir,'profiles', subs{j}, ['site-' site{i}]);       
-        avg_profile_file = fullfile(out_dir,'profiles','avg_profile',[targ_mesh '_roi' seed_mesh '_avg_profile.mat']);
-        profile_file = fullfile(out_profile_dir, [subs{j} '_site-' site{i} '_' targ_mesh ...
-            '_roi' seed_mesh '.surf2surf_profile.mat']);
+    t_str = num2str(threshold(t));
     
-        if exist(profile_file)
-            num_data = num_data + 1;
-            profile_data = load(profile_file);
-            if(num_data == 1)
-               avg_profile = profile_data;
+    num_data = 0;
+
+    avg_profile_file = fullfile(avg_profile_dir, ['t-' t_str '_avg_profile.mat']);
+
+    for j = 1:nsub
+        for i = 1:nsite
+    
+            out_profile_dir = fullfile(out_dir, 'profiles', subs{j}, ['site-', site{i}], ['t-', t_str]);  
+
+%             profile_file = fullfile(out_profile_dir, [subs{j} '_site-' site{i} '_' targ_mesh ...
+%                 '_roi' seed_mesh '.surf2surf_profile.mat']);
+            profile_file = fullfile(out_profile_dir, [subs{j} '_site-' site{i} '_t-' t_str '.mat']);
+        
+            if exist(profile_file)
+                num_data = num_data + 1;
+                profile_data = load(profile_file);
+                if(num_data == 1)
+                   avg_profile = profile_data;
+                else
+                   avg_profile.profile_mat = avg_profile.profile_mat + profile_data.profile_mat;
+                end
             else
-               avg_profile.profile_mat = avg_profile.profile_mat + profile_data.profile_mat;
+                fprintf('Skip: %s \n',profile_file);
+                disp([subs{j} ' site-' site{i} ' DOES NOT EXIT' ])
             end
-        else
-            fprintf('Skip: %s \n',profile_file);
-            disp([subs{j} ' site-' site{i} ' DOES NOT EXIT' ])
         end
     end
+    
+    profile_mat = avg_profile.profile_mat./num_data;
+    save(avg_profile_file,'profile_mat','-v7.3');
 end
-
-profile_mat = avg_profile.profile_mat./num_data;
-save(avg_profile_file,'profile_mat','-v7.3');
 
 disp('Step 3 DONE!');
 
 %% Step 4 To run Yeo2011 clustering algorithm for generate our own group prior
 % modified from CBIG_MSHBM_generate_ini_params.m
+
+% tic; % 开始计时
+
+out_dir = fullfile(project_dir, 'output/generate_profiles_and_ini_params');
 
 gro_dir = fullfile(project_dir, 'output', 'estimate_group_priors', 'group');
 
@@ -298,28 +322,55 @@ if(~exist(fullfile(gro_dir)))
     mkdir(fullfile(gro_dir));
 end
 
-output_file = fullfile(gro_dir,'group.mat');
-avg_profile_file = fullfile(out_dir,'profiles','avg_profile',[targ_mesh '_roi' seed_mesh '_avg_profile.mat']);
+avg_profile_dir = fullfile(out_dir, 'profiles', 'avg_profile');
 
-tic; % 开始计时
+% 并行工作 还不好使
+% parfor n_idx = 1:xnet   
+%     n_str = num2str(networks(n));
+%     for t_idx = 1:xthe
+%         t_str = num2str(threshold(t));
+%         
+%         TravelClub_CBIG_MSHBM_generate_ini_params(targ_mesh, current_network, ...
+%             fullfile(gro_dir, ['t-' t_str '_n-' n_str '_group.mat']), ...
+%             fullfile(avg_profile_dir, ['t-' t_str '_avg_profile.mat']), ...
+%             niter);
+%     end
+% end
 
-CBIG_VonmisesSeriesClustering_fix_bessel_randnum_bsxfun(targ_mesh, '', num_clusters, output_file, ...
-    avg_profile_file, 'NONE', 0, niter, 0, 1000, 1);
 
-load(output_file);
-clustered.mtc = mtc;
-clustered.lowerbound = lowerbound;
-clustered.lambda = lambda;
-save(output_file,'lh_labels','rh_labels','clustered');
+% 线性工作
+avg_profile_dir = fullfile(out_dir, 'profiles', 'avg_profile');
+
+for n = 1:xnet
+    n_str = num2str(networks(n));
+    for t = 1:xthe
+        t_str = num2str(threshold(t));
+        
+        output_file = fullfile(gro_dir, ['t-' t_str '_n-' n_str '_group.mat']);
+
+        % avg_profile_file = fullfile(out_dir,'profiles','avg_profile',[targ_mesh '_roi' seed_mesh '_avg_profile.mat']);
+        avg_profile_file = fullfile(avg_profile_dir, ['t-' t_str '_avg_profile.mat']);
+        
+        CBIG_VonmisesSeriesClustering_fix_bessel_randnum_bsxfun(targ_mesh, '', networks(n), output_file, ...
+            avg_profile_file, 'NONE', 0, niter, 0, 1000, 1);
+        
+        load(output_file);
+        clustered.mtc = mtc;
+        clustered.lowerbound = lowerbound;
+        clustered.lambda = lambda;
+        save(output_file,'lh_labels','rh_labels','clustered');
+
+    end
+end
 
 disp('Step 4 DONE!');
 
-tic;
-elapsedTime = toc/60;
-disp(['耗时', num2str(elapsedTime), '分钟'])
+% toc;
+% elapsedTime = toc/60;
+% disp(['耗时', num2str(elapsedTime), '分钟'])
 
 %% Step 5 把每个被试的功能连接结果路径按照要求整理成txt文件
-% 这部分具体的真理要求参阅CBIG_MSHBM_estimate_group_priors.m里的描述
+% 这部分具体的整理要求参阅CBIG_MSHBM_estimate_group_priors.m里的描述
 
 profilesFolder = fullfile(project_dir, 'output', 'generate_profiles_and_ini_params', 'profiles');
 outputFolder = fullfile(project_dir, 'output', 'estimate_group_priors', 'profile_list', 'training_set');
@@ -340,19 +391,26 @@ for i = 1:nsite
         
         subFolderName = subs{j};
         subfolderPath = fullfile(profilesFolder, subFolderName, siteFolderName);
-        
-        matFiles = dir(fullfile(subfolderPath, '*.mat'));
-        if isempty(matFiles)
-            matFilePaths{end+1}  = 'NONE';
-        else
-            matFilePaths{end+1}  = fullfile(subfolderPath, matFiles(1).name);
-        end
 
-        fileID = fopen(txtFileName, 'w');
-        for n = 1:length(matFilePaths)
-            fprintf(fileID, '%s\n', matFilePaths{n});
+        for t = 1:xthe%%%%%%%%%%%%%%%%%%%
+
+            theFolderName = num2str(threshold(t));
+            thefolderPath = fullfile(subfolderPath, ['t-' theFolderName]);
+        
+            matFiles = dir(fullfile(thefolderPath, '*.mat'));
+            if isempty(matFiles)
+                matFilePaths{end+1}  = 'NONE';
+            else
+                matFilePaths{end+1}  = fullfile(thefolderPath, matFiles(1).name);
+            end
+    
+            fileID = fopen(txtFileName, 'w');
+            for n = 1:length(matFilePaths)
+                fprintf(fileID, '%s\n', matFilePaths{n});
+            end
+            fclose(fileID);
+
         end
-        fclose(fileID);
     end  
 end
 
@@ -364,7 +422,7 @@ work_dir = fullfile(project_dir, 'output', 'estimate_group_priors');
 
 % estimate group priors 这里要用雪如修改过的代码
 Params = TravelClub_CBIG_MSHBM_estimate_group_priors(work_dir, targ_mesh, num2str(nsub), num2str(nsite), ...
-    site, num2str(num_clusters)) % Du 设置了 max_iter 5
+    site, num2str(networks)) % Du 设置了 max_iter 5
 
 % mex -v -largeArrayDims mtimesx.c -lmwblas -lmwlapack 如果需要编译
 % Add the result directory and its subfolders to the MATLAB path
@@ -403,7 +461,7 @@ parfor j = 1:nsub
         rh_labels = labels((vertex_num + 1):end)';
     
         output_file = fullfile(output_dir, ['Ind_parcellation_MSHBM_' subs{j} '.mat']);
-        save(output_file, 'lh_labels', 'rh_labels', 'num_clusters');
+        save(output_file, 'lh_labels', 'rh_labels', 'networks');
 
         catch ME
         fprintf('Error processing subject %s: %s\n', subs{j}, ME.message);
@@ -434,7 +492,7 @@ parfor j = 1:nsub
         temp = cifti_read(fullfile(temp_dir, 'DU15NET_consensus_fsLR_32k.dlabel.nii'));
         temp.cdata = [lh_labels; rh_labels];
     
-        fn = fullfile(vis_dir, [subs{j}, '_', num2str(num_clusters), 'Net_HCP.dlabel.nii']); 
+        fn = fullfile(vis_dir, [subs{j}, '_', num2str(networks), 'Net_HCP.dlabel.nii']); 
         cifti_write(temp, fn);
 
         catch ME
