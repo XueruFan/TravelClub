@@ -31,3 +31,7 @@ Step 6: Estimate individual mapping (估计模型的参数同时得出个体分�
 Step 7: Label Extract individual network labels (提取出个体分区的结果)
 
 Step 8: Make individual visualizations (可视化)
+
+5. .m
+
+自定义不同网络的名称和颜色，还没写这个代码
