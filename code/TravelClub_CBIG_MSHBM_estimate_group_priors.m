@@ -303,7 +303,7 @@ while(stop_inter == 0)
     if(~exist(fullfile(project_dir, 'priors')))
         mkdir(fullfile(project_dir, 'priors'));
     end
-    save(fullfile(project_dir, 'priors', ['Params_iteration',num2str(Params.iter_inter),'.mat']), 'Params');
+%     save(fullfile(project_dir, 'priors', ['Params_iteration',num2str(Params.iter_inter),'.mat']), 'Params');
 end
 
 % rmpath(fullfile(getenv('CBIG_CODE_DIR'), 'stable_projects', 'brain_parcellation', 'Kong2019_MSHBM', 'lib'));
