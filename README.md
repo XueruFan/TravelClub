@@ -26,7 +26,7 @@ Step 5: To run Yeo2011 clustering algorithm for generate our own group prior
 
 Step 6: Estimate individual mapping (估计模型的参数同时得出个体分区)
 
-4. [`TravelClub_03_GetLabel.m](code/TravelClub_03_GetLabel.m)
+4. [`TravelClub_03_GetLabel.m`](code/TravelClub_03_GetLabel.m)
    
 Step 7: Label Extract individual network labels (提取出个体分区的结果)
 
