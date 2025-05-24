@@ -1,5 +1,4 @@
-# TravelClub Analysis Pipeline
-3RB-BRAIN PEK Travel Club
+TravelClub PEM Analysis Pipeline
 Written by: Xueru Fan
 
 依次运行下列代码
@@ -8,7 +7,7 @@ Written by: Xueru Fan
    
 首先，把要用的数据从预处理好的文件夹中拷贝出来，方便后续分析时读入
 
-3. [`TravelClub_01_Prepare.m`](code/TravelClub_01_Prepare.m)
+## 2. [`TravelClub_01_Prepare.m`](code/TravelClub_01_Prepare.m)
    
 Step 0: Set up environment and parameters
 
@@ -18,7 +17,7 @@ Step 2: Generating profiles and initialization parameters (根据不同的阈值
 
 Step 3: Prepare the individual FC list files (把每个被试的功能连接结果路径按照要求整理成txt文件)
 
-5. [`TravelClub_02_PFM_loop.m`](code/TravelClub_02_PFM_loop.m) or [`TravelClub_02_PFM_uni.m`](c0de/TravelClub_02_PFM_uni.m)
+## 3. [`TravelClub_02_PFM_loop.m`](code/TravelClub_02_PFM_loop.m) or [`TravelClub_02_PFM_uni.m`](c0de/TravelClub_02_PFM_uni.m)
    
 (如果使用循环依次处理 不同阈值、不同网络个数 使用loop代码;如果开多个窗口同时处理 不同阈值、不同网络个数 使用uni代码)
 
@@ -26,7 +25,7 @@ Step 5: To run Yeo2011 clustering algorithm for generate our own group prior
 
 Step 6: Estimate individual mapping (估计模型的参数同时得出个体分区)
 
-7. [`TravelClub_03_GetLabel.m](code/TravelClub_03_GetLabel.m)
+## 4. [`TravelClub_03_GetLabel.m](code/TravelClub_03_GetLabel.m)
    
 Step 7: Label Extract individual network labels (提取出个体分区的结果)
 
