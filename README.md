@@ -32,6 +32,6 @@ Step 7: Label Extract individual network labels (提取出个体分区的结果)
 
 Step 8: Make individual visualizations (可视化)
 
-5. .m
+5. [`TravelClub_04_Color.m`](code/TravelClub_04_Color.m)
 
-自定义不同网络的名称和颜色，还没写这个代码
+Step 9 Modify name and color for each network-threshold solution (每个网络、阈值需要自定义网络名称和颜色)
