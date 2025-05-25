@@ -4,19 +4,21 @@ Written by: Xueru Fan
 
 依次运行下列代码
 
-1. [`copy_3RB2_data.sh`](code/copy_3RB2_data.sh)
+## Mapping individual networks ##
+
+1. [`TravelClub_00_copy_data.sh`](code/TravelClub_00_copy_data.sh)
    
 首先，把要用的数据从预处理好的文件夹中拷贝出来，方便后续分析时读入
 
 2. [`TravelClub_01_Prepare.m`](code/TravelClub_01_Prepare.m)
    
-Step 0: Set up environment and parameters (设置环境变量，提供站点、被试编号，同时需要设置网络分区个数和卡阈值的大小)
+Step 1-0: Set up environment and parameters (设置环境变量，提供站点、被试编号，同时需要设置网络分区个数和卡阈值的大小)
 
-Step 1: prepare the fMRI list files(生成站点被试的fMRI数据地址list文件)
+Step 1-1: prepare the fMRI list files(生成站点被试的fMRI数据地址list文件)
 
-Step 2: Generating profiles and initialization parameters (根据不同的阈值生成功能连接矩阵，由于多回波ICA融合时会进行降噪，在step0里需要小心设置卡阈值的范围)
+Step 1-2: Generating profiles and initialization parameters (根据不同的阈值生成功能连接矩阵，由于多回波ICA融合时会进行降噪，在step0里需要小心设置卡阈值的范围)
 
-Step 3: Prepare the individual FC list files (把每个被试的功能连接结果路径按照要求整理成txt文件)
+Step 1-3: Prepare the individual FC list files (把每个被试的功能连接结果路径按照要求整理成txt文件)
 
 3. [`TravelClub_02_PFM_loop.m`](code/TravelClub_02_PFM_loop.m) or [`TravelClub_02_PFM_uni.m`](c0de/TravelClub_02_PFM_uni.m)
    
@@ -35,3 +37,7 @@ Step 8: Make individual visualizations (可视化)
 5. [`TravelClub_04_Color.m`](code/TravelClub_04_Color.m)
 
 Step 9 Modify name and color for each network-threshold solution (每个网络、阈值需要自定义网络名称和颜色)
+
+6. [`TravelClub_05_ConsensusMap.m`](code/TravelClub_05_ConsensusMap.m)
+
+
