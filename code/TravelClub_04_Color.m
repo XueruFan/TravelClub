@@ -1,5 +1,4 @@
 %% Pipeline of individual networks mapping
-% Step 9
 % 3R-BRAIN Project
 % Written by Xue-Ru Fan 2025-05-24 @ Home
 
@@ -18,14 +17,6 @@ for j = 1:nsub
 
     % 修改元数据
     temp.metadata = [];
-    temp.metadata(1).key = 'Author';
-    temp.metadata(1).value = 'Xueru Fan';
-    temp.metadata(2).key = 'Project';
-    temp.metadata(2).value = 'PEK Travel Club (3RB2)';
-    temp.metadata(3).key = 'Adress';
-    temp.metadata(3).value = 'Beijing Normal University';
-    temp.metadata(4).key = 'Date';
-    temp.metadata(4).value = '24 May 2025';
 
     % 自定义每个网络名称和颜色对应的标签（原文件里的颜色和网络名称是对应的）
     idx = find(strcmp({temp.diminfo{1, 2}.maps.table.name}, 'FPN-A'));
