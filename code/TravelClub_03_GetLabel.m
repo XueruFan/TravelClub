@@ -81,4 +81,3 @@ for n = 1:xnet
 end
 
 disp("Step 8 DONE!")
-disp("-----------------  ALL DONE !  -----------------")
