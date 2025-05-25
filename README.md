@@ -40,4 +40,7 @@ Written by: Xueru Fan
 
 [`TravelClub_05_ConsensusMap.m`](code/TravelClub_05_ConsensusMap.m)
 
+   Step 10 Consensus maps according to winner-take-all strategy (按照赢者通吃的策略给每个体素分配网络标签)
+
+   Step 11 Make consensus map visualizations （可视化）
 
