@@ -43,4 +43,9 @@ Written by: Xueru Fan
    Step 10 Consensus maps according to winner-take-all strategy (按照赢者通吃的策略给每个体素分配网络标签)
 
    Step 11 Make consensus map visualizations （可视化）
+   
+[`TravelClub_06_AgreementMap.m`](code/TravelClub_06_AgreementMap.m)
 
+   Step 12 Step 12 Agreement(%) of Consensus maps (每个体素上有多少人%是共识图谱的网络)
+
+   Step 13 Make agreement map visualizations
