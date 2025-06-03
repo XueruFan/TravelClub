@@ -1,7 +1,6 @@
 %% Pipeline of individual networks mapping
-% Step 10
 % 3R-BRAIN Project
-% Written by Xue-Ru Fan 2024-06-03 @ Beijing Normal University
+% Written by Xue-Ru Fan 2025-05-23 @ Beijing Normal University
 
 %% Step 10 Consensus maps according to winner-take-all strategy
 
