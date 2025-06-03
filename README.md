@@ -2,8 +2,6 @@
 
 Written by: Xueru Fan
 
-依次运行下列代码
-
 
 
 [`TravelClub_00_copy_data.sh`](code/TravelClub_00_copy_data.sh)
@@ -49,3 +47,9 @@ Written by: Xueru Fan
    Step 12 Step 12 Agreement(%) of Consensus maps (每个体素上有多少人%是共识图谱的网络)
 
    Step 13 Make agreement map visualizations
+
+[`TravelClub_07_PercentageMap.m`](code/TravelClub_07_PercentageMap.m)
+
+   Step 14 Percentage maps for each network (每个网络在每个体素出现的人数百分比)
+
+   Step 15 Visualize percentage maps for each network
