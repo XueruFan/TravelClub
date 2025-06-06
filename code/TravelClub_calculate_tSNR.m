@@ -105,3 +105,82 @@ for p = 1:length(sub_ids)
 end
 
 disp('Step 2 DONE!');
+
+%% Step 3 计算每个站点的跨被试和run的平均tSNR
+
+site_ave_dir = fullfile(resu_dir, 'ave_sitewise');
+if ~exist(site_ave_dir, 'dir')
+    mkdir(site_ave_dir);
+end
+
+for s = 1:length(sites)
+    site = sites{s};
+    site_dir = fullfile(resu_dir, ['3RB2_', site]);
+
+    all_tSNR_site = [];
+    
+    for p = 1:length(sub_ids)
+        sub_id = sub_ids(p);
+        sub_str = sprintf('sub-%03d', sub_id);
+        sub_dir = fullfile(site_dir, sub_str);
+        
+        if ~exist(sub_dir, 'dir')
+            continue; % 跳过不存在的目录
+        end
+  
+        tSNR_files = dir(fullfile(sub_dir, '*_tSNR.dscalar.nii'));
+   
+        for f = 1:length(tSNR_files)
+            file_path = fullfile(sub_dir, tSNR_files(f).name);
+            tSNR_data = cifti_read(file_path);
+            
+            if isempty(all_tSNR_site)
+                all_tSNR_site = zeros(size(tSNR_data.cdata, 1), length(tSNR_files)*length(sub_ids));
+                file_count = 0;
+            end
+            
+            file_count = file_count + 1;
+            all_tSNR_site(:, file_count) = tSNR_data.cdata;
+        end
+    end
+    
+    site_mean_tSNR = mean(all_tSNR_site, 2);
+    
+    output_data = temp;
+    output_data.cdata = site_mean_tSNR;
+    cifti_write(output_data, fullfile(site_ave_dir, ['3RB2_', site, '_mean_tSNR.dscalar.nii']));
+end
+
+disp('Step 3 DONE!');
+
+%% Step 4 计算全局平均tSNR（跨所有被试、站点和run）
+
+global_ave_dir = fullfile(resu_dir, 'ave_global');
+if ~exist(global_ave_dir, 'dir')
+    mkdir(global_ave_dir);
+end
+
+sum_tSNR = [];
+site_count = 0;
+
+for s = 1:length(sites)
+    site = sites{s};
+    site_avg_file = fullfile(site_ave_dir, ['3RB2_', site, '_mean_tSNR.dscalar.nii']);
+    
+    site_data = cifti_read(site_avg_file);
+    
+    if isempty(sum_tSNR)
+        sum_tSNR = site_data.cdata;
+    else
+        sum_tSNR = sum_tSNR + site_data.cdata;
+    end
+    site_count = site_count + 1;
+end
+
+global_mean_tSNR = sum_tSNR / site_count;
+
+output_data = temp;
+output_data.cdata = global_mean_tSNR;
+cifti_write(output_data, fullfile(global_ave_dir, 'global_mean_tSNR.dscalar.nii'));
+
+disp('Step 4 DONE!');
