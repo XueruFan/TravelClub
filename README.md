@@ -53,3 +53,13 @@ Written by: Xueru Fan
    Step 14 Percentage maps for each network (每个网络在每个体素出现的人数百分比)
 
    Step 15 Visualize percentage maps for each network
+
+[`TravelClub_calculate_tSNR.m](code/TravelClub_calculate_tSNR.m)
+
+   Step 1 计算每个OC-ME的tSNR并保存成dscalar文件
+
+   Step 2 计算每个被试跨run和站点的OC-ME的平均tSNR
+   
+   Step 3 计算每个站点的跨被试和run的平均tSNR
+   
+   Step 4 计算全局平均tSNR（跨所有被试、站点和run）
