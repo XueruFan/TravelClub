@@ -1,6 +1,6 @@
 %% Pipeline of individual networks mapping
 % 3R-BRAIN Project
-% Modified with majority consensus condition
+% Modified with majority consensus condition (>50%)
 % Written by Xue-Ru Fan 2025-05-23 @ Beijing Normal University
 
 %% Step 10 Consensus maps with majority condition
