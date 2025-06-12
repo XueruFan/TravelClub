@@ -3,7 +3,6 @@
 Written by: Xueru Fan
 
 
-
 [`TravelClub_00_copy_data.sh`](code/TravelClub_00_copy_data.sh)
    
    首先，把要用的数据从预处理好的文件夹中拷贝出来，方便后续分析时读入
@@ -36,15 +35,19 @@ Written by: Xueru Fan
 
    Step 9 Modify name and color for each network-threshold solution (每个网络、阈值需要自定义网络名称和颜色)
 
-[`TravelClub_05_ConsensusMap.m`](code/TravelClub_05_ConsensusMap.m)
+[`TravelClub_051_ConsensusMap.m`](code/TravelClub_051_ConsensusMap.m)
 
    Step 10 Consensus maps according to winner-take-all strategy (按照赢者通吃的策略给每个体素分配网络标签)
 
    Step 11 Make consensus map visualizations （可视化）
+
+[`TravelClub_052_ConsensusMap.m`](code/TravelClub_052_ConsensusMap.m)
+
+   Consensus maps according to winner-take-all strategy, modified with majority consensus condition (只有当有一半及以上的人时，才把网络标签作为共识网络)
    
 [`TravelClub_06_AgreementMap.m`](code/TravelClub_06_AgreementMap.m)
 
-   Step 12 Step 12 Agreement(%) of Consensus maps (每个体素上有多少人%是共识图谱的网络)
+   Step 12 Agreement(%) of Consensus maps (每个体素上有多少人%是共识图谱的网络)
 
    Step 13 Make agreement map visualizations
 
